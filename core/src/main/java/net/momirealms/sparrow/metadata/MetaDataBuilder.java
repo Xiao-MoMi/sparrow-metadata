@@ -138,6 +138,10 @@ public class MetaDataBuilder {
             return new ExpirableCommonBuilder<>(this.id, DataType.BYTE, this.collection);
         }
 
+        public CrossServerByteBuilder crossServer() {
+            return new CrossServerByteBuilder(this.id, this.collection);
+        }
+
         public ByteMetaData build() {
             return new ByteMetaData(this.id, this.collection);
         }
@@ -180,6 +184,10 @@ public class MetaDataBuilder {
             return new ExpirableCommonBuilder<>(this.id, DataType.INT, this.collection);
         }
 
+        public CrossServerIntBuilder crossServer() {
+            return new CrossServerIntBuilder(this.id, this.collection);
+        }
+
         public IntMetaData build() {
             return new IntMetaData(this.id, this.collection);
         }
@@ -220,6 +228,10 @@ public class MetaDataBuilder {
 
         public ExpirableCommonBuilder<Long> expirable() {
             return new ExpirableCommonBuilder<>(this.id, DataType.LONG, this.collection);
+        }
+
+        public CrossServerLongBuilder crossServer() {
+            return new CrossServerLongBuilder(this.id, this.collection);
         }
 
         public LongMetaData build() {
