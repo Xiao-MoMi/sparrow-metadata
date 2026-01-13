@@ -19,11 +19,15 @@ public interface PersistentRepository {
 
     CompletableFuture<Map<String, Object>> getAll(UUID uuid, String[] collections);
 
+    CompletableFuture<Byte> increaseAndGet(UUID uuid, MetaData<Byte, ?> metaData, byte value);
+
     CompletableFuture<Double> increaseAndGet(UUID uuid, MetaData<Double, ?> metaData, double value);
 
     CompletableFuture<Integer> increaseAndGet(UUID uuid, MetaData<Integer, ?> metaData, int value);
 
     CompletableFuture<Long> increaseAndGet(UUID uuid, MetaData<Long, ?> metaData, long value);
+
+    CompletableFuture<Byte> decreaseAndGet(UUID uuid, MetaData<Byte, ?> metaData, byte value, boolean checkBalance);
 
     CompletableFuture<Double> decreaseAndGet(UUID uuid, MetaData<Double, ?> metaData, double value, boolean checkBalance);
 

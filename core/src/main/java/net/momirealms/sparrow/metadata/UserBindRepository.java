@@ -35,6 +35,10 @@ public final class UserBindRepository {
         return this.repository.getAll(this.user, collections);
     }
 
+    public CompletableFuture<Byte> increaseAndGet(MetaData<Byte, ?> metaData, byte value) {
+        return this.repository.increaseAndGet(this.user, metaData, value);
+    }
+
     public CompletableFuture<Double> increaseAndGet(MetaData<Double, ?> metaData, double value) {
         return this.repository.increaseAndGet(this.user, metaData, value);
     }
@@ -45,6 +49,10 @@ public final class UserBindRepository {
 
     public CompletableFuture<Long> increaseAndGet(MetaData<Long, ?> metaData, long value) {
         return this.repository.increaseAndGet(this.user, metaData, value);
+    }
+
+    public CompletableFuture<Byte> decreaseAndGet(MetaData<Byte, ?> metaData, byte value, boolean checkBalance) {
+        return this.repository.decreaseAndGet(this.user, metaData, value, checkBalance);
     }
 
     public CompletableFuture<Double> decreaseAndGet(MetaData<Double, ?> metaData, double value, boolean checkBalance) {

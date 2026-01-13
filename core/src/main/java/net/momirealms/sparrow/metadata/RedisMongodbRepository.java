@@ -242,6 +242,11 @@ public final class RedisMongodbRepository implements PersistentRepository, AutoC
     }
 
     @Override
+    public CompletableFuture<Byte> increaseAndGet(UUID uuid, MetaData<Byte, ?> metaData, byte value) {
+        return increaseAndGetInternal(uuid, metaData, value, Number::byteValue);
+    }
+
+    @Override
     public CompletableFuture<Double> increaseAndGet(UUID uuid, MetaData<Double, ?> metaData, double value) {
         return increaseAndGetInternal(uuid, metaData, value, Number::doubleValue);
     }
@@ -294,6 +299,11 @@ public final class RedisMongodbRepository implements PersistentRepository, AutoC
 
             return afterValue;
         }, this.executor);
+    }
+
+    @Override
+    public CompletableFuture<Byte> decreaseAndGet(UUID uuid, MetaData<Byte, ?> metaData, byte value, boolean checkBalance) {
+        return decreaseAndGetInternal(uuid, metaData, value, -value, Number::byteValue, checkBalance);
     }
 
     @Override

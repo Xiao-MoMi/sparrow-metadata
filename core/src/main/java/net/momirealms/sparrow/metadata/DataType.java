@@ -23,6 +23,18 @@ public final class DataType<U> {
             }
     );
 
+    public static final DataType<Byte> BYTE = new DataType<>(
+            Byte.class,
+            (byte) 0,
+            val -> new byte[] {val},
+            bytes -> bytes[0],
+            obj -> {
+                if (obj instanceof Number n) return n.byteValue();
+                if (obj instanceof String s) return Byte.parseByte(s);
+                return null;
+            }
+    );
+
     public static final DataType<Integer> INT = new DataType<>(
             Integer.class,
             0,
