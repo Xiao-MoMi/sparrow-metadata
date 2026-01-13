@@ -1,8 +1,0 @@
-redis:
-  url: redis://localhost:6379
-  prefix: spa_metadata
-
-mongodb:
-  uri: mongodb://localhost:27017
-  database: minecraft
-  collection: spa_metadata

@@ -4,9 +4,11 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class ExpirableCommonMetaDataValue<T> implements LazilyPersistedMetaDataValue<T>, ExpirableMetaDataValue<T> {
     protected final MetaDataUser user;
@@ -46,6 +48,20 @@ public class ExpirableCommonMetaDataValue<T> implements LazilyPersistedMetaDataV
             throw new IllegalStateException("User " + this.user.uuid() + " is not online");
         }
         return getCachedValueIgnoreLoaded();
+    }
+
+    public T getCachedValueOrDefault(T defaultValue) {
+        if (!this.user.loaded()) {
+            throw new IllegalStateException("User " + this.user.uuid() + " is not online");
+        }
+        return Optional.ofNullable(getCachedValueIgnoreLoaded()).orElse(defaultValue);
+    }
+
+    public T getCachedValue(Supplier<T> defaultValue) {
+        if (!this.user.loaded()) {
+            throw new IllegalStateException("User " + this.user.uuid() + " is not online");
+        }
+        return Optional.ofNullable(getCachedValueIgnoreLoaded()).orElseGet(defaultValue);
     }
 
     private T getCachedValueIgnoreLoaded() {

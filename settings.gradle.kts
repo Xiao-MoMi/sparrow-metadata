@@ -1,6 +1,5 @@
 rootProject.name = "sparrow-metadata"
 include(":core")
-include(":paper-plugin")
 pluginManagement {
     repositories {
         gradlePluginPortal()

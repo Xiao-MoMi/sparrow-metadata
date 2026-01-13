@@ -3,9 +3,11 @@ package net.momirealms.sparrow.metadata;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * 基础的元数据值容器，用于单个服务器环境下的元数据管理
@@ -76,6 +78,20 @@ public class CommonMetaDataValue<T> implements LazilyPersistedMetaDataValue<T> {
             throw new IllegalStateException("User " + this.user.uuid() + " is not online");
         }
         return this.cachedValue;
+    }
+
+    public T getCachedValueOrDefault(T defaultValue) {
+        if (!this.user.loaded()) {
+            throw new IllegalStateException("User " + this.user.uuid() + " is not online");
+        }
+        return Optional.ofNullable(this.cachedValue).orElse(defaultValue);
+    }
+
+    public T getCachedValue(Supplier<T> defaultValue) {
+        if (!this.user.loaded()) {
+            throw new IllegalStateException("User " + this.user.uuid() + " is not online");
+        }
+        return Optional.ofNullable(this.cachedValue).orElseGet(defaultValue);
     }
 
     /**
