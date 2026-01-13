@@ -50,7 +50,7 @@ public class SparrowMetaDataPlugin extends JavaPlugin implements Listener {
         PlayerConfigurationConnection connection = event.getConnection();
         UUID uuid = connection.getProfile().getId();
         System.out.println("[SparrowMetaDataPlugin] " + uuid + " 配置阶段开始");
-        MetaDataUser onlineUser = this.core.metaDataManager().createOnlineUser(uuid, connection::isConnected);
+        MetaDataUser onlineUser = this.core.metaDataManager().createOnlineUser(uuid, connection::isConnected, true);
         onlineUser.loadAll().join();
         System.out.println("[SparrowMetaDataPlugin] " + uuid + " 配置阶段加载完成");
     }
@@ -58,7 +58,7 @@ public class SparrowMetaDataPlugin extends JavaPlugin implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuit(PlayerConnectionCloseEvent event) {
         UUID uuid = event.getPlayerUniqueId();
-        this.core.metaDataManager().removeOnlineUserAndSave(uuid);
+        this.core.metaDataManager().removeOnlineUser(uuid, true);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)

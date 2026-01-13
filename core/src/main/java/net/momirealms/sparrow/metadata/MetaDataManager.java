@@ -32,9 +32,9 @@ public interface MetaDataManager {
     @Nullable MetaDataUser getOptionalUser(UUID uuid);
 
     @Nullable
-    MetaDataUser createOnlineUser(UUID uuid, Supplier<Boolean> onlineIndicator);
+    MetaDataUser createOnlineUser(UUID uuid, Supplier<Boolean> onlineIndicator, boolean acquireLock);
 
-    void removeOnlineUserAndSave(UUID uuid);
+    void removeOnlineUser(UUID uuid, boolean saveDirtyData);
 
     @NotNull
     PersistentRepository repository();

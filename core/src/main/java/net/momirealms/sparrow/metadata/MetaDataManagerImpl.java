@@ -99,9 +99,9 @@ final class MetaDataManagerImpl implements MetaDataManager {
 
     @Nullable
     @Override
-    public MetaDataUser createOnlineUser(final UUID uuid, Supplier<Boolean> onlineIndicator) {
+    public MetaDataUser createOnlineUser(final UUID uuid, Supplier<Boolean> onlineIndicator, boolean acquireLock) {
         // 获取锁
-        if (!this.repository.acquireLock(uuid, onlineIndicator)) {
+        if (acquireLock && !this.repository.acquireLock(uuid, onlineIndicator)) {
             return null;
         }
         // 确保在线用户存在且只有一个实例
@@ -121,17 +121,21 @@ final class MetaDataManagerImpl implements MetaDataManager {
     }
 
     @Override
-    public void removeOnlineUserAndSave(final UUID uuid) {
+    public void removeOnlineUser(final UUID uuid, boolean saveDirtyData) {
         // 从在线用户中移除
         MetaDataUser removed = this.onlineUsers.remove(uuid);
         if (removed != null) {
             removed.setOnline(false);
-            removed.saveDirty().whenComplete((v, e) -> {
-                if (e != null) {
-                    LOGGER.warn("Failed to save online user: {}", uuid, e);
-                }
+            if (saveDirtyData) {
+                removed.saveDirty().whenComplete((v, e) -> {
+                    if (e != null) {
+                        LOGGER.warn("Failed to save online user: {}", uuid, e);
+                    }
+                    this.repository.unlock(uuid);
+                });
+            } else {
                 this.repository.unlock(uuid);
-            });
+            }
         }
         // weakUsers中的引用会自然被GC回收，不需要手动移除
         // 如果用户还在其他地方被引用，weakUsers会保持它
