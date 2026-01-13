@@ -13,6 +13,8 @@ public class MetaDataBuilder {
         return this;
     }
 
+    public ByteBuilder byteType() {return new ByteBuilder(this.id, this.collection);}
+
     public IntBuilder intType() {
         return new IntBuilder(this.id, this.collection);
     }
@@ -115,6 +117,48 @@ public class MetaDataBuilder {
 
         public CrossServerDoubleMetaData build() {
             return new CrossServerDoubleMetaData(this.id, this.collection);
+        }
+    }
+
+    public static class ByteBuilder {
+        private final String id;
+        private String collection;
+
+        private ByteBuilder(String id, String collection) {
+            this.id = id;
+            this.collection = collection;
+        }
+
+        public ByteBuilder collection(String collection) {
+            this.collection = collection;
+            return this;
+        }
+
+        public ExpirableCommonBuilder<Byte> expirable() {
+            return new ExpirableCommonBuilder<>(this.id, DataType.BYTE, this.collection);
+        }
+
+        public ByteMetaData build() {
+            return new ByteMetaData(this.id, this.collection);
+        }
+    }
+
+    public static class CrossServerByteBuilder {
+        private final String id;
+        private String collection;
+
+        public CrossServerByteBuilder(String id, String collection) {
+            this.id = id;
+            this.collection = collection;
+        }
+
+        public CrossServerByteBuilder collection(String collection) {
+            this.collection = collection;
+            return this;
+        }
+
+        public CrossServerByteMetaData build() {
+            return new CrossServerByteMetaData(this.id, this.collection);
         }
     }
 
