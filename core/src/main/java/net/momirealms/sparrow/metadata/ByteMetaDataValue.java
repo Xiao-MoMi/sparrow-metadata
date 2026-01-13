@@ -37,7 +37,7 @@ public class ByteMetaDataValue extends CommonMetaDataValue<Byte> implements Nume
     @Override
     public CompletableFuture<Response<Byte>> add(Number value) {
         byte i = value.byteValue();
-        byte cachedValue = getCachedValue();
+        byte cachedValue = Optional.ofNullable(getCachedValue()).orElse((byte) 0);
         byte result = (byte) (cachedValue + i);
         update(result);
         return CompletableFuture.completedFuture(Response.success(i, result));
@@ -46,7 +46,7 @@ public class ByteMetaDataValue extends CommonMetaDataValue<Byte> implements Nume
     @Override
     public CompletableFuture<Response<Byte>> take(Number value, boolean checkBalance) {
         byte i = value.byteValue();
-        byte cachedValue = getCachedValue();
+        byte cachedValue = Optional.ofNullable(getCachedValue()).orElse((byte) 0);
         if (checkBalance && cachedValue < i) {
             return CompletableFuture.completedFuture(Response.failure());
         }

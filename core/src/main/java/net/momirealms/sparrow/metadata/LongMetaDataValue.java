@@ -1,5 +1,6 @@
 package net.momirealms.sparrow.metadata;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public class LongMetaDataValue extends CommonMetaDataValue<Long> implements NumericMetaDataValue<Long> {
@@ -11,7 +12,7 @@ public class LongMetaDataValue extends CommonMetaDataValue<Long> implements Nume
     @Override
     public CompletableFuture<Response<Long>> add(Number value) {
         long l = value.longValue();
-        long cachedValue = getCachedValue();
+        long cachedValue = Optional.ofNullable(getCachedValue()).orElse(0L);
         long result = cachedValue + l;
         update(result);
         return CompletableFuture.completedFuture(Response.success(l, result));
@@ -20,7 +21,7 @@ public class LongMetaDataValue extends CommonMetaDataValue<Long> implements Nume
     @Override
     public CompletableFuture<Response<Long>> take(Number value, boolean checkBalance) {
         long l = value.longValue();
-        long cachedValue = getCachedValue();
+        long cachedValue = Optional.ofNullable(getCachedValue()).orElse(0L);
         if (checkBalance && l > cachedValue) {
             return CompletableFuture.completedFuture(Response.failure());
         }
