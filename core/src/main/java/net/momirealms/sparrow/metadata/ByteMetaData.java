@@ -1,9 +1,9 @@
 package net.momirealms.sparrow.metadata;
 
-public class ByteMetaData extends CommonMetaData<Byte> {
+public class ByteMetaData extends AbstractMetaData<Byte, ByteMetaDataValue>  {
 
     protected ByteMetaData(String id, String collection) {
-        super(id, collection, DataType.BYTE);
+        super(id, collection, false, false, DataType.BYTE);
     }
 
     @Override

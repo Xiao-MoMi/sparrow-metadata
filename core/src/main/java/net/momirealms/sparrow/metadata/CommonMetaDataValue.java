@@ -17,7 +17,7 @@ import java.util.function.Supplier;
  */
 public class CommonMetaDataValue<T> implements LazilyPersistedMetaDataValue<T> {
     protected final MetaDataUser user;
-    protected final CommonMetaData<T> metaData;
+    protected final MetaData<T, ? extends MetaDataValue<T>> metaData;
     protected boolean markedForSave;
     protected T cachedValue;
     protected long lastOfflineUpdateTime;
@@ -30,7 +30,7 @@ public class CommonMetaDataValue<T> implements LazilyPersistedMetaDataValue<T> {
      * @param user 关联的用户对象
      * @param metaData 对应的元数据定义
      */
-    protected CommonMetaDataValue(MetaDataUser user, CommonMetaData<T> metaData) {
+    protected CommonMetaDataValue(MetaDataUser user, MetaData<T, ? extends MetaDataValue<T>> metaData) {
         this.metaData = metaData;
         this.user = user;
     }
@@ -57,12 +57,12 @@ public class CommonMetaDataValue<T> implements LazilyPersistedMetaDataValue<T> {
         if (this.user.loaded()) {
             this.cachedValue = value;
             return this.user.repository()
-                    .update(Map.of(this.collection(), List.of(new FriendlyData<>(this.metaData.id, this.metaData.dataType, value))));
+                    .update(Map.of(this.collection(), List.of(new FriendlyData<>(this.metaData.id(), this.metaData.dataType(), value))));
         } else {
             // 不在当前服务器，就可能在其他服务器上，发送redis消息以同步
             return this.user.repository()
-                    .update(Map.of(this.collection(), List.of(new FriendlyData<>(this.metaData.id, this.metaData.dataType, value))))
-                    .thenRun(() -> this.user.manager().messageBroker().publishOneWay(new BroadcastMetadataValueMessage(this.user.uuid(), this.metaData.id, this.metaData.dataType.encode(value)), ""));
+                    .update(Map.of(this.collection(), List.of(new FriendlyData<>(this.metaData.id(), this.metaData.dataType(), value))))
+                    .thenRun(() -> this.user.manager().messageBroker().publishOneWay(new BroadcastMetadataValueMessage(this.user.uuid(), this.metaData.id(), this.metaData.dataType().encode(value)), ""));
         }
     }
 
@@ -112,7 +112,7 @@ public class CommonMetaDataValue<T> implements LazilyPersistedMetaDataValue<T> {
             if (this.markedForSave) {
                 T cached = this.cachedValue;
                 this.markedForSave = false;
-                callback.accept(new FriendlyData<>(this.metaData.id, this.metaData.dataType, cached));
+                callback.accept(new FriendlyData<>(this.metaData.id(), this.metaData.dataType(), cached));
             }
         } finally {
             this.lock.unlock();

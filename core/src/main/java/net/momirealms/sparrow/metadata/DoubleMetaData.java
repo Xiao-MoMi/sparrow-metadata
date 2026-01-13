@@ -1,9 +1,9 @@
 package net.momirealms.sparrow.metadata;
 
-public class DoubleMetaData extends CommonMetaData<Double> {
+public class DoubleMetaData extends AbstractMetaData<Double, DoubleMetaDataValue> {
 
     protected DoubleMetaData(String id, String collection) {
-        super(id, collection, DataType.DOUBLE);
+        super(id, collection, false, false, DataType.DOUBLE);
     }
 
     @Override

@@ -1,9 +1,9 @@
 package net.momirealms.sparrow.metadata;
 
-public class IntMetaData extends CommonMetaData<Integer> {
+public class IntMetaData extends AbstractMetaData<Integer, IntMetaDataValue> {
 
     protected IntMetaData(String id, String collection) {
-        super(id, collection, DataType.INT);
+        super(id, collection, false, false, DataType.INT);
     }
 
     @Override
