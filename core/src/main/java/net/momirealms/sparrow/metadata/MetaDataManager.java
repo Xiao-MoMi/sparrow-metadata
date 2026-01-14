@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 @SuppressWarnings("rawtypes")
@@ -34,7 +35,7 @@ public interface MetaDataManager {
     @Nullable
     MetaDataUser createOnlineUser(UUID uuid, Supplier<Boolean> onlineIndicator, boolean acquireLock);
 
-    void removeOnlineUser(UUID uuid, boolean saveDirtyData);
+    CompletableFuture<Void> removeOnlineUser(UUID uuid, boolean saveDirtyData);
 
     @NotNull
     PersistentRepository repository();

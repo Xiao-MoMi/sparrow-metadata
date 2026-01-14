@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
@@ -121,25 +122,26 @@ final class MetaDataManagerImpl implements MetaDataManager {
     }
 
     @Override
-    public void removeOnlineUser(final UUID uuid, boolean saveDirtyData) {
+    public CompletableFuture<Void> removeOnlineUser(final UUID uuid, boolean saveDirtyData) {
         // 从在线用户中移除
         MetaDataUser removed = this.onlineUsers.remove(uuid);
         if (removed != null) {
             removed.setOnline(false);
             if (saveDirtyData) {
-                removed.saveDirty().whenComplete((v, e) -> {
+                return removed.saveDirty().whenComplete((v, e) -> {
                     if (e != null) {
                         LOGGER.warn("Failed to save online user: {}", uuid, e);
                     }
                     this.repository.unlock(uuid);
                 });
             } else {
-                this.repository.unlock(uuid);
+                return this.repository.unlock(uuid);
             }
         }
         // weakUsers中的引用会自然被GC回收，不需要手动移除
         // 如果用户还在其他地方被引用，weakUsers会保持它
         // 如果没有其他地方引用，GC会自动清理
+        return CompletableFuture.completedFuture(null);
     }
 
     @NotNull
