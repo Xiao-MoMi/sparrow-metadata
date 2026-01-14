@@ -20,6 +20,12 @@ public interface MetaDataManager {
 
     void registerMetaData(MetaData metaData);
 
+    default void registerMetaData(MetaData... metaData) {
+        for (MetaData type : metaData) {
+            registerMetaData(type);
+        }
+    }
+
     MetaData[] registeredMetaData();
 
     @Nullable
