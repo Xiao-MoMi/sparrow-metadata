@@ -24,6 +24,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * 基于 Redis (缓存) 和 MongoDB (持久化) 的元数据仓库实现
@@ -188,7 +189,9 @@ public final class RedisMongodbRepository implements PersistentRepository, AutoC
                 MongoCollection<Document> collection = getCollection(entry.getKey());
                 List<Bson> updates = new ArrayList<>();
                 for (FriendlyData<?> dataEntry : entry.getValue()) {
-                    updates.add(Updates.set(dataEntry.storageId(), dataEntry.data()));
+                    Object data = dataEntry.data();
+                    Object processedData = convertToMongoCompatible(data);
+                    updates.add(Updates.set(dataEntry.storageId(), processedData));
                 }
 
                 if (!updates.isEmpty()) {
@@ -219,6 +222,20 @@ public final class RedisMongodbRepository implements PersistentRepository, AutoC
         }, this.executor);
     }
 
+    private Object convertToMongoCompatible(Object data) {
+        if (data instanceof long[] longs) {
+            List<Long> list = new ArrayList<>(longs.length);
+            for (long l : longs) list.add(l);
+            return list;
+        }
+        if (data instanceof int[] ints) {
+            List<Integer> list = new ArrayList<>(ints.length);
+            for (int i : ints) list.add(i);
+            return list;
+        }
+        return data;
+    }
+
     @Override
     public CompletableFuture<Map<String, Object>> getAll(UUID uuid, String[] collections) {
         return CompletableFuture.supplyAsync(() -> {
@@ -231,7 +248,12 @@ public final class RedisMongodbRepository implements PersistentRepository, AutoC
                         // 统一转换 Binary 为 byte[]
                         if (value instanceof Binary binary) {
                             result.put(entry.getKey(), binary.getData());
-                        } else {
+                        }
+                        // 兼容处理：将 List 转回对应的基本类型数组
+                        else if (value instanceof List<?> list && !list.isEmpty()) {
+                            result.put(entry.getKey(), convertListToArray(list));
+                        }
+                        else {
                             result.put(entry.getKey(), value);
                         }
                     }
@@ -239,6 +261,21 @@ public final class RedisMongodbRepository implements PersistentRepository, AutoC
             }
             return result;
         }, this.executor);
+    }
+
+    private Object convertListToArray(List<?> list) {
+        Object first = list.getFirst();
+        if (first instanceof Long) {
+            long[] arr = new long[list.size()];
+            for (int i = 0; i < list.size(); i++) arr[i] = (long) list.get(i);
+            return arr;
+        }
+        if (first instanceof Integer) {
+            int[] arr = new int[list.size()];
+            for (int i = 0; i < list.size(); i++) arr[i] = (int) list.get(i);
+            return arr;
+        }
+        return list;
     }
 
     @Override
