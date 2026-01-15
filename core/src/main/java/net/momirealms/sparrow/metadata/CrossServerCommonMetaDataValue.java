@@ -30,7 +30,7 @@ public class CrossServerCommonMetaDataValue<T> implements CrossServerMetaDataVal
     public CompletableFuture<T> get() {
         return this.user.repository().get(this.metaData).thenApply(it -> {
             this.lastKnownValue = it;
-            this.lastUpdateTime = System.currentTimeMillis();
+            this.lastUpdateTime = System.nanoTime();
             return it;
         });
     }

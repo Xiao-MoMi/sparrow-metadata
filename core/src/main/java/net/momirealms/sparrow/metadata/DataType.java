@@ -185,4 +185,8 @@ public final class DataType<U> {
     public U parse(Object value) {
         return this.parser.apply(value);
     }
+
+    public boolean isNumberType() {
+        return Number.class.isAssignableFrom(this.type);
+    }
 }

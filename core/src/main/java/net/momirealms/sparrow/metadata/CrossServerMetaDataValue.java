@@ -7,7 +7,7 @@ public interface CrossServerMetaDataValue<T> extends MetaDataValue<T> {
     CompletableFuture<T> lastKnownValue();
 
     default CompletableFuture<Boolean> update(T value, boolean markForSave) {
-        return update(value, System.currentTimeMillis(), markForSave);
+        return update(value, System.nanoTime(), markForSave);
     }
 
     CompletableFuture<Boolean> update(T value, long time, boolean markForSave);

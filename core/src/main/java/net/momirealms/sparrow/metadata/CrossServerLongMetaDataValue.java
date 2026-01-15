@@ -51,7 +51,7 @@ public class CrossServerLongMetaDataValue implements CrossServerMetaDataValue<Lo
 
     @NotNull
     private Response<Long> createResponse(Long value, Long after) {
-        long time = System.currentTimeMillis();
+        long time = System.nanoTime();
         this.lastUpdateTime = time;
         this.lastKnownValue = after;
         this.user.manager().messageBroker().publishOneWay(new BroadcastCrossServerMetadataValueMessage(this.user.uuid(), this.metaData.id, this.metaData.dataType.encode(after), time), "");
@@ -62,7 +62,7 @@ public class CrossServerLongMetaDataValue implements CrossServerMetaDataValue<Lo
     public CompletableFuture<Long> get() {
         return this.user.repository().get(this.metaData).thenApply(it -> {
             this.lastKnownValue = it;
-            this.lastUpdateTime = System.currentTimeMillis();
+            this.lastUpdateTime = System.nanoTime();
             return it;
         });
     }
@@ -106,7 +106,7 @@ public class CrossServerLongMetaDataValue implements CrossServerMetaDataValue<Lo
     }
 
     private boolean updateLastKnownValue(Long value, long time) {
-        if (this.lastUpdateTime < time) {
+        if (this.lastUpdateTime <= time) {
             this.lastKnownValue = value;
             this.lastUpdateTime = time;
             return true;

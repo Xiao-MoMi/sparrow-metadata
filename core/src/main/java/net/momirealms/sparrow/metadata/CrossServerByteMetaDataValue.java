@@ -51,7 +51,7 @@ public class CrossServerByteMetaDataValue implements CrossServerMetaDataValue<By
 
     @NotNull
     private Response<Byte> createResponse(Byte value, Byte after) {
-        long time = System.currentTimeMillis();
+        long time = System.nanoTime();
         this.lastUpdateTime = time;
         this.lastKnownValue = after;
         this.user.manager().messageBroker().publishOneWay(new BroadcastCrossServerMetadataValueMessage(this.user.uuid(), this.metaData.id, this.metaData.dataType.encode(after), time), "");
@@ -62,7 +62,7 @@ public class CrossServerByteMetaDataValue implements CrossServerMetaDataValue<By
     public CompletableFuture<Byte> get() {
         return this.user.repository().get(this.metaData).thenApply(it -> {
             this.lastKnownValue = it;
-            this.lastUpdateTime = System.currentTimeMillis();
+            this.lastUpdateTime = System.nanoTime();
             return it;
         });
     }
