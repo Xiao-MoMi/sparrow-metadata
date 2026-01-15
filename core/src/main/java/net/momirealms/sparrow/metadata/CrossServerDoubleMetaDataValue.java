@@ -106,7 +106,7 @@ public class CrossServerDoubleMetaDataValue implements CrossServerMetaDataValue<
     }
 
     private boolean updateLastKnownValue(Double value, long time) {
-        if (this.lastUpdateTime < time) {
+        if (this.lastUpdateTime <= time) {
             this.lastKnownValue = value;
             this.lastUpdateTime = time;
             return true;

@@ -74,7 +74,7 @@ public class CrossServerCommonMetaDataValue<T> implements CrossServerMetaDataVal
     }
 
     private boolean updateLastKnownValue(T value, long time) {
-        if (this.lastUpdateTime < time) {
+        if (this.lastUpdateTime <= time) {
             this.lastKnownValue = value;
             this.lastUpdateTime = time;
             return true;

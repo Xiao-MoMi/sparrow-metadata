@@ -106,7 +106,7 @@ public class CrossServerIntMetaDataValue implements CrossServerMetaDataValue<Int
     }
 
     private boolean updateLastKnownValue(Integer value, long time) {
-        if (this.lastUpdateTime < time) {
+        if (this.lastUpdateTime <= time) {
             this.lastKnownValue = value;
             this.lastUpdateTime = time;
             return true;

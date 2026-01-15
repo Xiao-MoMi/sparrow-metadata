@@ -106,7 +106,7 @@ public class CrossServerByteMetaDataValue implements CrossServerMetaDataValue<By
     }
 
     private boolean updateLastKnownValue(Byte value, long time) {
-        if (this.lastUpdateTime < time) {
+        if (this.lastUpdateTime <= time) {
             this.lastKnownValue = value;
             this.lastUpdateTime = time;
             return true;
