@@ -134,8 +134,12 @@ public final class RedisMongodbRepository implements PersistentRepository, AutoC
                 Object fieldValue = doc.get(fieldName);
                 if (fieldValue != null) {
                     T parsed = metaData.dataType().parse(fieldValue);
-                    // 回填缓存
-                    safeSetCache(redisKey, metaData.dataType().encode(parsed));
+                    if (parsed != null) {
+                        // 回填缓存
+                        safeSetCache(redisKey, metaData.dataType().encode(parsed));
+                    } else {
+                        safeSetCache(redisKey, NULL_MARKER);
+                    }
                     return parsed;
                 }
             }
