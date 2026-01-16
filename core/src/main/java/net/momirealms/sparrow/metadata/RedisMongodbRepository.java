@@ -315,10 +315,19 @@ public final class RedisMongodbRepository implements PersistentRepository, AutoC
             MongoCollection<Document> collection = getCollection(metaData);
             String fieldName = metaData.id();
 
-            // 1. 利用 Mongo 原子更新并返回新文档
+            // 利用 Mongo 原子更新并返回新文档
+            List<Bson> pipeline = List.of(
+                    Updates.set(fieldName,
+                            new Document("$add", Arrays.asList(
+                                    new Document("$ifNull", Arrays.asList("$" + fieldName, 0)),
+                                    value
+                            ))
+                    )
+            );
+
             Document result = collection.findOneAndUpdate(
                     Filters.eq("_id", uuid),
-                    Updates.inc(fieldName, value),
+                    pipeline, // 传入管道而不是简单的 Updates 对象
                     new FindOneAndUpdateOptions()
                             .upsert(true)
                             .returnDocument(ReturnDocument.AFTER)
