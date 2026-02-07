@@ -61,8 +61,8 @@ public class MetaDataBuilder {
             return this;
         }
 
-        public CrossServerDoubleBuilder crossServerSync() {
-            return new CrossServerDoubleBuilder(this.id, this.collection);
+        public CrossServerCommonBuilder<T> crossServerSync() {
+            return new CrossServerCommonBuilder<>(this.id, this.dataType, this.collection);
         }
 
         public ExpirableCommonBuilder<T> expirable() {
