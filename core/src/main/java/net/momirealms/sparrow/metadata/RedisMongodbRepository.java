@@ -339,7 +339,7 @@ public final class RedisMongodbRepository implements PersistentRepository, AutoC
 
             T afterValue = converter.apply(result.get(fieldName, Number.class));
 
-            // 2. 移除旧缓存，强制下次 get 时拉取最新值
+            // 移除旧缓存，强制下次 get 时拉取最新值
             try {
                 this.redisCommands.del(getRedisKey(uuid, fieldName));
             } catch (Exception e) {
@@ -386,24 +386,22 @@ public final class RedisMongodbRepository implements PersistentRepository, AutoC
             MongoCollection<Document> collection = getCollection(metaData);
             String fieldName = metaData.id();
 
-            // 1. 构建查询条件
             Bson filter = Filters.eq("_id", uuid);
             if (checkBalance) {
                 // 如果检查余额，增加 gte 条件
                 filter = Filters.and(filter, Filters.gte(fieldName, value));
             }
 
-            // 2. 配置更新选项
             FindOneAndUpdateOptions options = new FindOneAndUpdateOptions()
                     .returnDocument(ReturnDocument.AFTER)
                     .projection(Projections.include(fieldName));
 
-            // 如果不检查余额，通常意味着允许负数，建议开启 upsert 确保操作一定成功
+            // 如果不检查余则允许负数
             if (!checkBalance) {
                 options.upsert(true);
             }
 
-            // 3. 执行原子更新
+            // 执行原子更新
             Document result = collection.findOneAndUpdate(filter, Updates.inc(fieldName, decValue), options);
 
             // 如果 result 为 null，仅在 checkBalance=true 时表示余额不足
@@ -414,7 +412,6 @@ public final class RedisMongodbRepository implements PersistentRepository, AutoC
 
             T afterValue = converter.apply(result.get(fieldName, Number.class));
 
-            // 4. 清除 Redis 缓存 (Cache-Aside)
             try {
                 this.redisCommands.del(getRedisKey(uuid, fieldName));
             } catch (Exception e) {
