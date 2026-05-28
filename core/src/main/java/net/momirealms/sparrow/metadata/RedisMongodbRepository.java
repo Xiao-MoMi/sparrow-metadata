@@ -198,9 +198,14 @@ public final class RedisMongodbRepository implements PersistentRepository, AutoC
                 for (FriendlyData<?> dataEntry : entry.getValue()) {
                     Object data = dataEntry.data();
                     Object processedData;
-                    if (dataEntry.dataType().bytes()) {
+                    DataType<?> type = dataEntry.dataType();
+                    if (type.useBytes()) {
                         DataType dataType = dataEntry.dataType();
-                        processedData = dataType.encode(data);
+                        if (type.useString()) {
+                            processedData = new String(dataType.encode(data), StandardCharsets.UTF_8);
+                        } else {
+                            processedData = dataType.encode(data);
+                        }
                     } else {
                         processedData = convertToMongoCompatible(data);
                     }

@@ -79,6 +79,7 @@ public final class DataType<U> {
             bytes -> bytes,
             obj -> {
                 if (obj instanceof byte[] b) return b;
+                if (obj instanceof String s) return s.getBytes(StandardCharsets.UTF_8);
                 if (obj instanceof Collection<?> col) {
                     byte[] res = new byte[col.size()];
                     int i = 0;
@@ -148,6 +149,7 @@ public final class DataType<U> {
     private final Function<U, byte[]> encoder;
     private final Function<Object, U> parser;
     private final boolean useBytes;
+    private final boolean useString;
 
     private DataType(Class<U> type, Function<U, byte[]> encoder, Function<byte[], U> decoder, Function<Object, U> parser) {
         this.type = type;
@@ -155,14 +157,16 @@ public final class DataType<U> {
         this.decoder = decoder;
         this.parser = parser;
         this.useBytes = false;
+        this.useString = false;
     }
 
-    private DataType(Class<U> type, Function<U, byte[]> encoder, Function<byte[], U> decoder) {
+    private DataType(Class<U> type, Function<U, byte[]> encoder, Function<byte[], U> decoder, boolean useString) {
         this.type = type;
         this.encoder = encoder;
         this.decoder = decoder;
         this.parser = obj -> {
             if (obj instanceof byte[] b) return decoder.apply(b);
+            if (obj instanceof String str) return decoder.apply(str.getBytes(StandardCharsets.UTF_8));
             if (obj instanceof Collection<?> col) {
                 byte[] res = new byte[col.size()];
                 int i = 0;
@@ -172,14 +176,15 @@ public final class DataType<U> {
             return null;
         };
         this.useBytes = true;
+        this.useString = useString;
     }
 
     public static <U> DataType<U> create(Class<U> type, Function<U, byte[]> encoder, Function<byte[], U> decoder) {
-        return new DataType<>(type, encoder, decoder);
+        return new DataType<>(type, encoder, decoder, false);
     }
 
     public static <U> DataType<U> create0(Class<U> type, Function<U, String> encoder, Function<String, U> decoder) {
-        return new DataType<>(type, u -> encoder.apply(u).getBytes(StandardCharsets.UTF_8), s -> decoder.apply(new String(s, StandardCharsets.UTF_8)));
+        return new DataType<>(type, u -> encoder.apply(u).getBytes(StandardCharsets.UTF_8), s -> decoder.apply(new String(s, StandardCharsets.UTF_8)), true);
     }
 
     public Class<U> type() {
@@ -202,7 +207,11 @@ public final class DataType<U> {
         return Number.class.isAssignableFrom(this.type);
     }
 
-    public boolean bytes() {
+    public boolean useBytes() {
         return this.useBytes;
+    }
+
+    public boolean useString() {
+        return this.useString;
     }
 }
