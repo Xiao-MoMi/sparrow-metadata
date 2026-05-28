@@ -31,6 +31,10 @@ public class MetaDataBuilder {
         return new CommonBuilder<>(this.id, DataType.STRING, this.collection);
     }
 
+    public <T> CommonBuilder<T> customType(DataType<T> dataType) {
+        return new CommonBuilder<>(this.id, dataType, this.collection);
+    }
+
     public CommonBuilder<byte[]> byteArrayType() {
         return new CommonBuilder<>(this.id, DataType.BYTE_ARRAY, this.collection);
     }

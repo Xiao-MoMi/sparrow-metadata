@@ -132,6 +132,9 @@ public final class RedisMongodbRepository implements PersistentRepository, AutoC
             if (doc != null && doc.containsKey(fieldName)) {
                 Object fieldValue = doc.get(fieldName);
                 if (fieldValue != null) {
+                    if (fieldValue instanceof Binary binary) {
+                        fieldValue = binary.getData();
+                    }
                     T parsed = metaData.dataType().parse(fieldValue);
                     if (parsed != null) {
                         // 回填缓存
@@ -182,6 +185,7 @@ public final class RedisMongodbRepository implements PersistentRepository, AutoC
         }, this.executor);
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
     public CompletableFuture<Void> update(UUID uuid, Map<String, List<FriendlyData<?>>> toUpdate) {
         return CompletableFuture.runAsync(() -> {
@@ -193,7 +197,13 @@ public final class RedisMongodbRepository implements PersistentRepository, AutoC
                 List<Bson> updates = new ArrayList<>();
                 for (FriendlyData<?> dataEntry : entry.getValue()) {
                     Object data = dataEntry.data();
-                    Object processedData = convertToMongoCompatible(data);
+                    Object processedData;
+                    if (dataEntry.dataType().bytes()) {
+                        processedData = convertToMongoCompatible(data);
+                    } else {
+                        DataType dataType = dataEntry.dataType();
+                        processedData = dataType.encode(data);
+                    }
                     updates.add(Updates.set(dataEntry.storageId(), processedData));
                 }
 

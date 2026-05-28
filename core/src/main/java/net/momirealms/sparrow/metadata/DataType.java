@@ -11,7 +11,6 @@ public final class DataType<U> {
 
     public static final DataType<Instant> INSTANT = new DataType<>(
             Instant.class,
-            Instant.ofEpochMilli(0),
             Util::encodeInstant,
             Util::decodeInstant,
             obj -> {
@@ -25,7 +24,6 @@ public final class DataType<U> {
 
     public static final DataType<Byte> BYTE = new DataType<>(
             Byte.class,
-            (byte) 0,
             val -> new byte[] {val},
             bytes -> bytes[0],
             obj -> {
@@ -37,7 +35,6 @@ public final class DataType<U> {
 
     public static final DataType<Integer> INT = new DataType<>(
             Integer.class,
-            0,
             val -> ByteBuffer.allocate(Integer.BYTES).putInt(val).array(),
             bytes -> ByteBuffer.wrap(bytes).getInt(),
             obj -> {
@@ -49,7 +46,6 @@ public final class DataType<U> {
 
     public static final DataType<Long> LONG = new DataType<>(
             Long.class,
-            0L,
             val -> ByteBuffer.allocate(Long.BYTES).putLong(val).array(),
             bytes -> ByteBuffer.wrap(bytes).getLong(),
             obj -> {
@@ -61,7 +57,6 @@ public final class DataType<U> {
 
     public static final DataType<Double> DOUBLE = new DataType<>(
             Double.class,
-            0.0,
             val -> ByteBuffer.allocate(Double.BYTES).putDouble(val).array(),
             bytes -> ByteBuffer.wrap(bytes).getDouble(),
             obj -> {
@@ -73,7 +68,6 @@ public final class DataType<U> {
 
     public static final DataType<String> STRING = new DataType<>(
             String.class,
-            "",
             val -> val.getBytes(StandardCharsets.UTF_8),
             bytes -> new String(bytes, StandardCharsets.UTF_8),
             Object::toString
@@ -81,7 +75,6 @@ public final class DataType<U> {
 
     public static final DataType<byte[]> BYTE_ARRAY = new DataType<>(
             byte[].class,
-            new byte[0],
             val -> val,
             bytes -> bytes,
             obj -> {
@@ -98,7 +91,6 @@ public final class DataType<U> {
 
     public static final DataType<int[]> INT_ARRAY = new DataType<>(
             int[].class,
-            new int[0],
             val -> {
                 ByteBuffer buffer = ByteBuffer.allocate(val.length * Integer.BYTES);
                 for (int i : val) buffer.putInt(i);
@@ -126,7 +118,6 @@ public final class DataType<U> {
 
     public static final DataType<long[]> LONG_ARRAY = new DataType<>(
             long[].class,
-            new long[0],
             val -> {
                 ByteBuffer buffer = ByteBuffer.allocate(val.length * Long.BYTES);
                 for (long l : val) buffer.putLong(l);
@@ -156,18 +147,31 @@ public final class DataType<U> {
     private final Function<byte[], U> decoder;
     private final Function<U, byte[]> encoder;
     private final Function<Object, U> parser;
-    private final U defaultValue;
+    private final boolean useBytes;
 
-    private DataType(Class<U> type, U defaultValue, Function<U, byte[]> encoder, Function<byte[], U> decoder, Function<Object, U> parser) {
+    private DataType(Class<U> type, Function<U, byte[]> encoder, Function<byte[], U> decoder, Function<Object, U> parser) {
         this.type = type;
-        this.defaultValue = defaultValue;
         this.encoder = encoder;
         this.decoder = decoder;
         this.parser = parser;
+        this.useBytes = false;
     }
 
-    public U defaultValue() {
-        return this.defaultValue;
+    public DataType(Class<U> type, Function<U, byte[]> encoder, Function<byte[], U> decoder) {
+        this.type = type;
+        this.encoder = encoder;
+        this.decoder = decoder;
+        this.parser = obj -> {
+            if (obj instanceof byte[] b) return decoder.apply(b);
+            if (obj instanceof Collection<?> col) {
+                byte[] res = new byte[col.size()];
+                int i = 0;
+                for (Object o : col) res[i++] = ((Number) o).byteValue();
+                return decoder.apply(res);
+            }
+            return null;
+        };
+        this.useBytes = true;
     }
 
     public Class<U> type() {
@@ -188,5 +192,9 @@ public final class DataType<U> {
 
     public boolean isNumberType() {
         return Number.class.isAssignableFrom(this.type);
+    }
+
+    public boolean bytes() {
+        return this.useBytes;
     }
 }
