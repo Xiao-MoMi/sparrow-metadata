@@ -490,6 +490,7 @@ public final class RedisMongodbRepository implements PersistentRepository, AutoC
                 return false;
             }
         }
+        LOGGER.warn("Timed out waiting for Redis player lock to be released: {}", uuid);
         return true;
     }
 }
