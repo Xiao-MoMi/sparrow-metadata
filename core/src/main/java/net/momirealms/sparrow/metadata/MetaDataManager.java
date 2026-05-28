@@ -26,7 +26,17 @@ public interface MetaDataManager {
         }
     }
 
+    void unregisterMetaData(String key);
+
+    default void unregisterMetaData(String... keys) {
+        for (String key : keys) {
+            unregisterMetaData(key);
+        }
+    }
+
     MetaData[] registeredMetaData();
+
+    void clearMetaData();
 
     @Nullable
     <T, H extends MetaDataValue<T>> MetaData<T, H> getMetaData(@NotNull String id);

@@ -16,10 +16,10 @@ final class MetaDataManagerImpl implements MetaDataManager {
     private final PersistentRepository repository;
     private final MessageBroker messageBroker;
     // 注册的元数据，每次修改都会设置dirty
-    private final Map<String, MetaData> metaData = new HashMap<>();
-    private boolean dirty1;
+    private final Map<String, MetaData> metaData = new ConcurrentHashMap<>();
+    private volatile boolean dirty1;
     private MetaData[] metaDataArray;
-    private boolean dirty2;
+    private volatile boolean dirty2;
     private String[] collections;
 
     // 都是线程安全的实现
@@ -45,6 +45,20 @@ final class MetaDataManagerImpl implements MetaDataManager {
             throw new IllegalArgumentException("MetaData with the same id already registered: " + metaData.id());
         }
         this.metaData.put(metaData.id(), metaData);
+        this.dirty1 = true;
+        this.dirty2 = true;
+    }
+
+    @Override
+    public void unregisterMetaData(final String key) {
+        this.metaData.remove(key);
+        this.dirty1 = true;
+        this.dirty2 = true;
+    }
+
+    @Override
+    public void clearMetaData() {
+        this.metaData.clear();
         this.dirty1 = true;
         this.dirty2 = true;
     }
