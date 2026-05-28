@@ -157,7 +157,7 @@ public final class DataType<U> {
         this.useBytes = false;
     }
 
-    public DataType(Class<U> type, Function<U, byte[]> encoder, Function<byte[], U> decoder) {
+    private DataType(Class<U> type, Function<U, byte[]> encoder, Function<byte[], U> decoder) {
         this.type = type;
         this.encoder = encoder;
         this.decoder = decoder;
@@ -172,6 +172,14 @@ public final class DataType<U> {
             return null;
         };
         this.useBytes = true;
+    }
+
+    public static <U> DataType<U> create(Class<U> type, Function<U, byte[]> encoder, Function<byte[], U> decoder) {
+        return new DataType<>(type, encoder, decoder);
+    }
+
+    public static <U> DataType<U> create0(Class<U> type, Function<U, String> encoder, Function<String, U> decoder) {
+        return new DataType<>(type, u -> encoder.apply(u).getBytes(StandardCharsets.UTF_8), s -> decoder.apply(new String(s, StandardCharsets.UTF_8)));
     }
 
     public Class<U> type() {

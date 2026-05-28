@@ -199,10 +199,10 @@ public final class RedisMongodbRepository implements PersistentRepository, AutoC
                     Object data = dataEntry.data();
                     Object processedData;
                     if (dataEntry.dataType().bytes()) {
-                        processedData = convertToMongoCompatible(data);
-                    } else {
                         DataType dataType = dataEntry.dataType();
                         processedData = dataType.encode(data);
+                    } else {
+                        processedData = convertToMongoCompatible(data);
                     }
                     updates.add(Updates.set(dataEntry.storageId(), processedData));
                 }
