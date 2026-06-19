@@ -1,7 +1,11 @@
 package net.momirealms.sparrow.metadata;
 
+import io.netty.buffer.ByteBuf;
+import net.momirealms.sparrow.redis.messagebroker.util.ByteBufHelper;
+
 import java.nio.ByteBuffer;
 import java.time.Instant;
+import java.util.UUID;
 
 final class Util {
     private Util() {}
@@ -25,5 +29,14 @@ final class Util {
         int nanos = buffer.getInt();
 
         return Instant.ofEpochSecond(seconds, nanos);
+    }
+
+    public static void writeUUID(ByteBuf buf, UUID uuid) {
+        buf.writeLong(uuid.getMostSignificantBits());
+        buf.writeLong(uuid.getLeastSignificantBits());
+    }
+
+    public static UUID readUUID(ByteBuf buf) {
+        return new UUID(buf.readLong(), buf.readLong());
     }
 }

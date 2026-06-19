@@ -1,7 +1,9 @@
 package net.momirealms.sparrow.metadata;
 
 import com.google.common.collect.MapMaker;
+import io.netty.buffer.ByteBuf;
 import net.momirealms.sparrow.redis.messagebroker.MessageBroker;
+import net.momirealms.sparrow.redis.messagebroker.registry.RedisMessageRegistry;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,7 +16,7 @@ import java.util.function.Supplier;
 final class MetaDataManagerImpl implements MetaDataManager {
     // 持久化仓库
     private final PersistentRepository repository;
-    private final MessageBroker messageBroker;
+    private final MessageBroker<ByteBuf> messageBroker;
     // 注册的元数据，每次修改都会设置dirty
     private final Map<String, MetaData> metaData = new ConcurrentHashMap<>();
     private volatile boolean dirty1;
@@ -29,13 +31,15 @@ final class MetaDataManagerImpl implements MetaDataManager {
             .concurrencyLevel(4)
             .makeMap();
 
+    @SuppressWarnings("unchecked")
     MetaDataManagerImpl(PersistentRepository repository, MessageBroker messageBroker) {
         MetaDataProvider.set(this);
         this.repository = repository;
-        this.messageBroker = messageBroker;
-        this.messageBroker.registry().register(BroadcastMetadataValueMessage.ID, BroadcastMetadataValueMessage.CODEC);
-        this.messageBroker.registry().register(BroadcastMetadataExpirableValueMessage.ID, BroadcastMetadataExpirableValueMessage.CODEC);
-        this.messageBroker.registry().register(BroadcastCrossServerMetadataValueMessage.ID, BroadcastCrossServerMetadataValueMessage.CODEC);
+        this.messageBroker = (MessageBroker<ByteBuf>) messageBroker;
+        RedisMessageRegistry registry = this.messageBroker.registry();
+        registry.register(BroadcastMetadataValueMessage.ID, BroadcastMetadataValueMessage.CODEC);
+        registry.register(BroadcastMetadataExpirableValueMessage.ID, BroadcastMetadataExpirableValueMessage.CODEC);
+        registry.register(BroadcastCrossServerMetadataValueMessage.ID, BroadcastCrossServerMetadataValueMessage.CODEC);
         this.messageBroker.subscribe();
     }
 
@@ -165,7 +169,7 @@ final class MetaDataManagerImpl implements MetaDataManager {
     }
 
     @Override
-    public MessageBroker messageBroker() {
+    public MessageBroker<ByteBuf> messageBroker() {
         return this.messageBroker;
     }
 }

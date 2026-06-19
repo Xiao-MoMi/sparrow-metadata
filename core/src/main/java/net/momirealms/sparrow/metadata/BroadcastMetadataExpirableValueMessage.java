@@ -1,16 +1,17 @@
 package net.momirealms.sparrow.metadata;
 
+import io.netty.buffer.ByteBuf;
 import net.momirealms.sparrow.redis.messagebroker.MessageIdentifier;
 import net.momirealms.sparrow.redis.messagebroker.codec.MessageCodec;
 import net.momirealms.sparrow.redis.messagebroker.message.OneWayMessage;
-import net.momirealms.sparrow.redis.messagebroker.util.SparrowByteBuf;
+import net.momirealms.sparrow.redis.messagebroker.util.ByteBufHelper;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;
 import java.util.UUID;
 
-public final class BroadcastMetadataExpirableValueMessage extends OneWayMessage {
-    static final MessageCodec<SparrowByteBuf, BroadcastMetadataExpirableValueMessage> CODEC = MessageCodec.ofMember(BroadcastMetadataExpirableValueMessage::write, BroadcastMetadataExpirableValueMessage::new);
+public final class BroadcastMetadataExpirableValueMessage extends OneWayMessage<ByteBuf> {
+    static final MessageCodec<ByteBuf, BroadcastMetadataExpirableValueMessage> CODEC = MessageCodec.ofMember(BroadcastMetadataExpirableValueMessage::write, BroadcastMetadataExpirableValueMessage::new);
     static final MessageIdentifier ID = new MessageIdentifier("metadata", "expirable_value");
     private final UUID uuid;
     private final String metadataId;
@@ -24,22 +25,22 @@ public final class BroadcastMetadataExpirableValueMessage extends OneWayMessage 
         this.time = time;
     }
 
-    private BroadcastMetadataExpirableValueMessage(SparrowByteBuf buf) {
+    private BroadcastMetadataExpirableValueMessage(ByteBuf buf) {
         super(buf);
-        this.uuid = buf.readUUID();
-        this.metadataId = buf.readUtf8();
-        this.data = buf.readByteArray();
-        this.time = Instant.ofEpochSecond(buf.readCompactLong(), buf.readCompactInt());
+        this.uuid = Util.readUUID(buf);
+        this.metadataId = ByteBufHelper.readUtf8(buf, 32767);
+        this.data = ByteBufHelper.readByteArray(buf, 64 * 1024 * 1024);
+        this.time = Instant.ofEpochSecond(buf.readLong(), buf.readInt());
     }
 
     @Override
-    protected void write(SparrowByteBuf buf) {
+    protected void write(ByteBuf buf) {
         super.write(buf);
-        buf.writeUUID(this.uuid);
-        buf.writeUtf8(this.metadataId);
-        buf.writeByteArray(this.data);
-        buf.writeCompactLong(time.getEpochSecond());
-        buf.writeCompactInt(time.getNano());
+        Util.writeUUID(buf, this.uuid);
+        ByteBufHelper.writeUtf8(buf, this.metadataId, 32767);
+        ByteBufHelper.writeByteArray(buf, this.data);
+        buf.writeLong(this.time.getEpochSecond());
+        buf.writeInt(this.time.getNano());
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})

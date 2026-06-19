@@ -1,5 +1,6 @@
 package net.momirealms.sparrow.metadata;
 
+import io.netty.buffer.ByteBuf;
 import net.momirealms.sparrow.redis.messagebroker.MessageBroker;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -56,5 +57,5 @@ public interface MetaDataManager {
     @NotNull
     PersistentRepository repository();
 
-    MessageBroker messageBroker();
+    MessageBroker<ByteBuf> messageBroker();
 }
