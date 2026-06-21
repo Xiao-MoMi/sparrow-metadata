@@ -1,5 +1,6 @@
 package net.momirealms.sparrow.metadata;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
@@ -97,8 +98,13 @@ public class MetaDataUserImpl implements MetaDataUser {
                     this.values.put(metaData, holder);
                 }
                 if (metaDataValue instanceof ExpirableMetaDataValue<?> expirableValue) {
-                    Date time = (Date) it.get(metaData.id() + ExpirableMetaDataValue.SUFFIX);
-                    expirableValue.update(time.toInstant(), false);
+                    Object timeObj = it.get(metaData.id() + ExpirableMetaDataValue.SUFFIX);
+                    if (timeObj != null) {
+                        Instant expiry = DataType.INSTANT.parse(timeObj);
+                        if (expiry != null) {
+                            expirableValue.update(expiry, false);
+                        }
+                    }
                 }
             }
             this.loadedAll = true;

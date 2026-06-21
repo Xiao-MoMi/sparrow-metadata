@@ -23,8 +23,8 @@ public final class UserBindRepository {
         return this.repository.get(this.user, key);
     }
 
-    public CompletableFuture<Instant> getExpiryTime(String metadataKey) {
-        return this.repository.getExpiryTime(this.user, metadataKey);
+    public CompletableFuture<Instant> getExpiryTime(String metadataKey, String collection) {
+        return this.repository.getExpiryTime(this.user, metadataKey, collection);
     }
 
     public CompletableFuture<Void> update(Map<String, List<FriendlyData<?>>> metadata) {

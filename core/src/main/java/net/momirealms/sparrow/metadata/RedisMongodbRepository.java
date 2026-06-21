@@ -153,7 +153,7 @@ public final class RedisMongodbRepository implements PersistentRepository, AutoC
     }
 
     @Override
-    public CompletableFuture<Instant> getExpiryTime(final UUID uuid, final String metaDataKey) {
+    public CompletableFuture<Instant> getExpiryTime(final UUID uuid, final String metaDataKey, final String collection) {
         return CompletableFuture.supplyAsync(() -> {
             String fieldName = metaDataKey + ExpirableMetaDataValue.SUFFIX;
             byte[] redisKey = getRedisKey(uuid, fieldName);
@@ -168,7 +168,7 @@ public final class RedisMongodbRepository implements PersistentRepository, AutoC
                 LOGGER.warn("Redis read failed for expiry {}, fallback to DB", uuid, e);
             }
 
-            Document doc = getCollection(metaDataKey).find(Filters.eq("_id", uuid))
+            Document doc = getCollection(collection).find(Filters.eq("_id", uuid))
                     .projection(Projections.include(fieldName))
                     .first();
 
@@ -317,7 +317,7 @@ public final class RedisMongodbRepository implements PersistentRepository, AutoC
     }
 
     /**
-     * 利用 MongoDB $inc 原子性实现
+     * 利用 MongoDB $inc 原子性实现。$inc 对不存在的字段自动视为 0。
      */
     private <T extends Number> CompletableFuture<T> increaseAndGetInternal(
             UUID uuid,
@@ -329,19 +329,9 @@ public final class RedisMongodbRepository implements PersistentRepository, AutoC
             MongoCollection<Document> collection = getCollection(metaData);
             String fieldName = metaData.id();
 
-            // 利用 Mongo 原子更新并返回新文档
-            List<Bson> pipeline = List.of(
-                    Updates.set(fieldName,
-                            new Document("$add", Arrays.asList(
-                                    new Document("$ifNull", Arrays.asList("$" + fieldName, 0)),
-                                    value
-                            ))
-                    )
-            );
-
             Document result = collection.findOneAndUpdate(
                     Filters.eq("_id", uuid),
-                    pipeline, // 传入管道而不是简单的 Updates 对象
+                    Updates.inc(fieldName, value),
                     new FindOneAndUpdateOptions()
                             .upsert(true)
                             .returnDocument(ReturnDocument.AFTER)

@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -19,7 +19,7 @@ public class ExpirableCommonMetaDataValue<T> implements LazilyPersistedMetaDataV
     protected long lastOfflineUpdateTime;
     protected CompletableFuture<T> cachedFuture;
     protected Instant expiryTime; // 如果值是 -1 代表未加载
-    protected ReentrantReadWriteLock.WriteLock lock = new ReentrantReadWriteLock().writeLock();
+    protected ReentrantLock lock = new ReentrantLock();
 
     protected ExpirableCommonMetaDataValue(MetaDataUser user, ExpirableCommonMetaData<T> metaData) {
         this.user = user;
@@ -73,11 +73,23 @@ public class ExpirableCommonMetaDataValue<T> implements LazilyPersistedMetaDataV
     }
 
     /**
+     * 强制保存为某值，使用 {@link Instant#MAX} 作为默认过期时间（永不过期）。
+     * 用于管理指令等需要直接覆盖的场景。
+     *
+     * @param value 值
+     */
+    @Override
+    public CompletableFuture<Void> forceUpdate(T value) {
+        return forceUpdate(value, Instant.MAX);
+    }
+
+    /**
      * 强制保存为某值，不需要在乎玩家是否在线
      * <p>
      * 这里会存在一个问题：玩家上线但是数据未加载完全，中途被forceUpdate。一般来说不考虑此情况
      *
      * @param value 值
+     * @param time  过期时间
      */
     public CompletableFuture<Void> forceUpdate(T value, Instant time) {
         // 玩家在当前服务器，那么只需要更新这里的cache
@@ -212,21 +224,26 @@ public class ExpirableCommonMetaDataValue<T> implements LazilyPersistedMetaDataV
         // 离线玩家或正在加载中的玩家
         long current = System.currentTimeMillis();
 
-        // 如果没有过离线请求
-        if (this.cachedFuture == null) {
-            this.lastOfflineUpdateTime = current;
-            this.cachedFuture = getExpirableData();
+        this.lock.lock();
+        try {
+            // 如果没有过离线请求
+            if (this.cachedFuture == null) {
+                this.lastOfflineUpdateTime = current;
+                this.cachedFuture = getExpirableData();
+                return this.cachedFuture;
+            }
+
+            // 如果已经10秒了，需要强制刷新一次future
+            if (current - this.lastOfflineUpdateTime > 10_000) {
+                this.cachedFuture = getExpirableData();
+                this.lastOfflineUpdateTime = current;
+            }
+
+            // 否则用旧的
             return this.cachedFuture;
+        } finally {
+            this.lock.unlock();
         }
-
-        // 如果已经10秒了，需要强制刷新一次future
-        if (current - this.lastOfflineUpdateTime > 10_000) {
-            this.cachedFuture = getExpirableData();
-            this.lastOfflineUpdateTime = current;
-        }
-
-        // 否则用旧的
-        return this.cachedFuture;
     }
 
     private CompletableFuture<T> getExpirableData() {
@@ -239,7 +256,7 @@ public class ExpirableCommonMetaDataValue<T> implements LazilyPersistedMetaDataV
     }
 
     private CompletableFuture<Instant> getExpiryTime() {
-        return this.user.repository().getExpiryTime(this.metaData.id);
+        return this.user.repository().getExpiryTime(this.metaData.id, this.collection());
     }
 
     private CompletableFuture<T> getData() {

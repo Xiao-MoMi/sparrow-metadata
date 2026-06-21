@@ -1,15 +1,10 @@
 package net.momirealms.sparrow.metadata;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 public interface MetaDataValue<T> {
-    Logger LOGGER = LoggerFactory.getLogger(MetaDataValue.class);
-
     MetaDataUser owner();
 
     MetaData<T, ? extends MetaDataValue<T>> metadata();
@@ -29,6 +24,17 @@ public interface MetaDataValue<T> {
     }
 
     CompletableFuture<Boolean> update(T value, boolean markForSave);
+
+    /**
+     * 强制更新值到存储层，绕过在线状态检查和时间戳竞争。
+     * 用于管理指令等需要直接覆盖的场景。
+     *
+     * @param value 值
+     * @return CompletableFuture
+     */
+    default CompletableFuture<Void> forceUpdate(T value) {
+        return this.update(value, true).thenApply(b -> null);
+    }
 
     default String collection() {
         return Optional.ofNullable(metadata().collection()).orElse(owner().repository().defaultCollectionName());

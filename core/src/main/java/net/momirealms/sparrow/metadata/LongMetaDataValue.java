@@ -1,32 +1,33 @@
 package net.momirealms.sparrow.metadata;
 
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-
-public class LongMetaDataValue extends CommonMetaDataValue<Long> implements NumericMetaDataValue<Long> {
+public class LongMetaDataValue extends AbstractNumericMetaDataValue<Long> {
 
     protected LongMetaDataValue(MetaDataUser user, LongMetaData metaData) {
         super(user, metaData);
     }
 
     @Override
-    public CompletableFuture<Response<Long>> add(Number value) {
-        long l = value.longValue();
-        long cachedValue = Optional.ofNullable(getCachedValue()).orElse(0L);
-        long result = cachedValue + l;
-        update(result);
-        return CompletableFuture.completedFuture(Response.success(l, result));
+    protected Long fromNumber(Number value) {
+        return value.longValue();
     }
 
     @Override
-    public CompletableFuture<Response<Long>> take(Number value, boolean checkBalance) {
-        long l = value.longValue();
-        long cachedValue = Optional.ofNullable(getCachedValue()).orElse(0L);
-        if (checkBalance && l > cachedValue) {
-            return CompletableFuture.completedFuture(Response.failure());
-        }
-        long result = cachedValue - l;
-        update(result);
-        return CompletableFuture.completedFuture(Response.success(l, result));
+    protected Long zero() {
+        return 0L;
+    }
+
+    @Override
+    protected Long addValues(Long a, Long b) {
+        return a + b;
+    }
+
+    @Override
+    protected Long subtractValues(Long a, Long b) {
+        return a - b;
+    }
+
+    @Override
+    protected boolean lessThan(Long a, Long b) {
+        return a < b;
     }
 }

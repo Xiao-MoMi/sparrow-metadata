@@ -4,14 +4,39 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
-public class ByteMetaDataValue extends CommonMetaDataValue<Byte> implements NumericMetaDataValue<Byte> {
+public class ByteMetaDataValue extends AbstractNumericMetaDataValue<Byte> {
 
     protected ByteMetaDataValue(MetaDataUser user, ByteMetaData metaData) {
         super(user, metaData);
     }
 
+    @Override
+    protected Byte fromNumber(Number value) {
+        return value.byteValue();
+    }
+
+    @Override
+    protected Byte zero() {
+        return (byte) 0;
+    }
+
+    @Override
+    protected Byte addValues(Byte a, Byte b) {
+        return (byte) (a + b);
+    }
+
+    @Override
+    protected Byte subtractValues(Byte a, Byte b) {
+        return (byte) (a - b);
+    }
+
+    @Override
+    protected boolean lessThan(Byte a, Byte b) {
+        return a < b;
+    }
+
     public CompletableFuture<Boolean> getAsBoolean() {
-        return get().thenApply(value -> value == 1);
+        return get().thenApply(value -> value != null && value == 1);
     }
 
     public Boolean getCachedValueAsBoolean() {
@@ -40,26 +65,5 @@ public class ByteMetaDataValue extends CommonMetaDataValue<Byte> implements Nume
 
     public CompletableFuture<Boolean> update(Boolean value, boolean markForSave) {
         return update(value == null ? null : (value ? (byte) 1 : (byte) 0), markForSave);
-    }
-
-    @Override
-    public CompletableFuture<Response<Byte>> add(Number value) {
-        byte i = value.byteValue();
-        byte cachedValue = Optional.ofNullable(getCachedValue()).orElse((byte) 0);
-        byte result = (byte) (cachedValue + i);
-        update(result);
-        return CompletableFuture.completedFuture(Response.success(i, result));
-    }
-
-    @Override
-    public CompletableFuture<Response<Byte>> take(Number value, boolean checkBalance) {
-        byte i = value.byteValue();
-        byte cachedValue = Optional.ofNullable(getCachedValue()).orElse((byte) 0);
-        if (checkBalance && cachedValue < i) {
-            return CompletableFuture.completedFuture(Response.failure());
-        }
-        byte result = (byte) (cachedValue - i);
-        update(result);
-        return CompletableFuture.completedFuture(Response.success(i, result));
     }
 }

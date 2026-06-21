@@ -13,7 +13,7 @@ public interface PersistentRepository {
 
     <T> CompletableFuture<T> get(UUID uuid, MetaData<T, ?> key);
 
-    CompletableFuture<Instant> getExpiryTime(UUID uuid, String metadataKey);
+    CompletableFuture<Instant> getExpiryTime(UUID uuid, String metadataKey, String collection);
 
     CompletableFuture<Void> update(UUID uuid, Map<String, List<FriendlyData<?>>> metadataList);
 

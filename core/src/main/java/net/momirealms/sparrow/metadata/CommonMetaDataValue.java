@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -22,7 +22,7 @@ public class CommonMetaDataValue<T> implements LazilyPersistedMetaDataValue<T> {
     protected T cachedValue;
     protected long lastOfflineUpdateTime;
     protected CompletableFuture<T> cachedFuture;
-    protected ReentrantReadWriteLock.WriteLock lock = new ReentrantReadWriteLock().writeLock(); // 写锁，用于线程安全更新
+    protected ReentrantLock lock = new ReentrantLock();
 
     /**
      * 构造函数
@@ -52,6 +52,7 @@ public class CommonMetaDataValue<T> implements LazilyPersistedMetaDataValue<T> {
      *
      * @param value 值
      */
+    @Override
     public CompletableFuture<Void> forceUpdate(T value) {
         // 玩家在当前服务器，那么只需要更新这里的cache
         if (this.user.loaded()) {
@@ -162,7 +163,7 @@ public class CommonMetaDataValue<T> implements LazilyPersistedMetaDataValue<T> {
      * @return 包含元数据值的 CompletableFuture
      */
     @Override
-    public synchronized CompletableFuture<T> get() {
+    public CompletableFuture<T> get() {
         // 如果已初始化且玩家在线，直接返回缓存值
         if (this.user.loaded()) {
             return CompletableFuture.completedFuture(this.cachedValue);
@@ -172,20 +173,25 @@ public class CommonMetaDataValue<T> implements LazilyPersistedMetaDataValue<T> {
 
         long current = System.currentTimeMillis();
 
-        // 如果没有过离线请求
-        if (this.cachedFuture == null) {
-            this.lastOfflineUpdateTime = current;
-            this.cachedFuture = getData();
+        this.lock.lock();
+        try {
+            // 如果没有过离线请求
+            if (this.cachedFuture == null) {
+                this.lastOfflineUpdateTime = current;
+                this.cachedFuture = getData();
+                return this.cachedFuture;
+            }
+
+            // 如果已经10秒了，需要强制刷新一次future
+            if (current - this.lastOfflineUpdateTime > 10_000) {
+                this.cachedFuture = getData();
+                this.lastOfflineUpdateTime = current;
+            }
+
+            // 否则用旧的
             return this.cachedFuture;
+        } finally {
+            this.lock.unlock();
         }
-
-        // 如果已经10秒了，需要强制刷新一次future
-        if (current - this.lastOfflineUpdateTime > 10_000) {
-            this.cachedFuture = getData();
-            this.lastOfflineUpdateTime = current;
-        }
-
-        // 否则用旧的
-        return this.cachedFuture;
     }
 }
