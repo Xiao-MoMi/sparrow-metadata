@@ -19,6 +19,8 @@ public interface PersistentRepository {
 
     CompletableFuture<Map<String, Object>> getAll(UUID uuid, String[] collections);
 
+    <T> CompletableFuture<List<UUID>> getRankedUsers(MetaData<T, ?> metaData, int from, int to, boolean ascending);
+
     CompletableFuture<Byte> increaseAndGet(UUID uuid, MetaData<Byte, ?> metaData, byte value);
 
     CompletableFuture<Double> increaseAndGet(UUID uuid, MetaData<Double, ?> metaData, double value);

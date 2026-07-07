@@ -281,6 +281,33 @@ public final class RedisMongodbRepository implements PersistentRepository, AutoC
         }, this.executor);
     }
 
+    @Override
+    public <T> CompletableFuture<List<UUID>> getRankedUsers(MetaData<T, ?> metaData, int from, int to, boolean ascending) {
+        return CompletableFuture.supplyAsync(() -> {
+            int start = Math.max(1, from);
+            int limit = Math.max(0, to - start + 1);
+            if (limit == 0) {
+                return Collections.emptyList();
+            }
+            MongoCollection<Document> collection = getCollection(metaData);
+            String fieldName = metaData.id();
+            Bson sort = ascending ? Sorts.ascending(fieldName) : Sorts.descending(fieldName);
+            List<UUID> result = new ArrayList<>(limit);
+            collection.find()
+                    .sort(sort)
+                    .skip(start - 1)
+                    .limit(limit)
+                    .projection(Projections.include("_id"))
+                    .forEach((Document doc) -> {
+                        UUID uuid = (UUID) doc.get("_id");
+                        if (uuid != null) {
+                            result.add(uuid);
+                        }
+                    });
+            return result;
+        }, this.executor);
+    }
+
     private Object convertListToArray(List<?> list) {
         Object first = list.getFirst();
         if (first instanceof Long) {

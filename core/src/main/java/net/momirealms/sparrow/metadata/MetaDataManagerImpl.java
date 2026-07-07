@@ -168,6 +168,12 @@ final class MetaDataManagerImpl implements MetaDataManager {
         return this.repository;
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    @Override
+    public CompletableFuture<List<UUID>> getRankedUsers(MetaData metaData, int from, int to, boolean ascending) {
+        return this.repository.getRankedUsers(metaData, from, to, ascending);
+    }
+
     @Override
     public MessageBroker<ByteBuf> messageBroker() {
         return this.messageBroker;
