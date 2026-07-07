@@ -292,19 +292,13 @@ public final class RedisMongodbRepository implements PersistentRepository, AutoC
             MongoCollection<Document> collection = getCollection(metaData);
             String fieldName = metaData.id();
             Bson sort = ascending ? Sorts.ascending(fieldName) : Sorts.descending(fieldName);
-            List<UUID> result = new ArrayList<>(limit);
-            collection.find()
+            return collection.find()
                     .sort(sort)
                     .skip(start - 1)
                     .limit(limit)
                     .projection(Projections.include("_id"))
-                    .forEach((Document doc) -> {
-                        UUID uuid = (UUID) doc.get("_id");
-                        if (uuid != null) {
-                            result.add(uuid);
-                        }
-                    });
-            return result;
+                    .map(doc -> (UUID) doc.get("_id"))
+                    .into(new ArrayList<>());
         }, this.executor);
     }
 
