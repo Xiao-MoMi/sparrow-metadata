@@ -5,6 +5,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.*;
 import io.lettuce.core.RedisClient;
+import io.lettuce.core.RedisFuture;
 import io.lettuce.core.SetArgs;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.sync.RedisCommands;
@@ -20,8 +21,12 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -35,6 +40,7 @@ public final class RedisMongodbRepository implements PersistentRepository, AutoC
     private static final byte[] NULL_MARKER = "##NULL##".getBytes(StandardCharsets.UTF_8);
     private static final long CACHE_TTL_SECONDS = Duration.ofMinutes(10).toSeconds();
     private static final long LOCK_SECONDS = 60;
+    private static final long LOCK_WAIT_MILLIS = 5_000;
 
     private final MongoClient mongoClient;
     private final MongoDatabase mongoDatabase;
@@ -485,23 +491,33 @@ public final class RedisMongodbRepository implements PersistentRepository, AutoC
     @Override
     public boolean acquireLock(UUID uuid, Supplier<Boolean> onlineIndicator) {
         SetArgs args = SetArgs.Builder.nx().px(Duration.ofSeconds(LOCK_SECONDS));
-        long currentTime = System.currentTimeMillis();
-        while (System.currentTimeMillis() - currentTime < 10_000) {
+        long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(LOCK_WAIT_MILLIS);
+        while (System.nanoTime() < deadline) {
             if (!onlineIndicator.get()) {
                 return false;
             }
-            String ok = this.redisCommands.set(getLockKey(uuid), NULL_MARKER, args);
-            if ("OK".equals(ok)) {
-                return true;
-            }
+            RedisFuture<String> attempt = this.redisConnection.async().set(getLockKey(uuid), NULL_MARKER, args);
             try {
-                Thread.sleep(50);
+                long remaining = Math.max(0, deadline - System.nanoTime());
+                if ("OK".equals(attempt.get(remaining, TimeUnit.NANOSECONDS))) {
+                    return true;
+                }
+                remaining = deadline - System.nanoTime();
+                if (remaining > 0) {
+                    TimeUnit.NANOSECONDS.sleep(Math.min(TimeUnit.MILLISECONDS.toNanos(50), remaining));
+                }
+            } catch (TimeoutException e) {
+                attempt.cancel(false);
+                break;
             } catch (InterruptedException e) {
+                attempt.cancel(false);
                 Thread.currentThread().interrupt();
                 return false;
+            } catch (ExecutionException e) {
+                throw new CompletionException(e.getCause());
             }
         }
-        LOGGER.warn("Timed out waiting for Redis player lock to be released: {}", uuid);
+        LOGGER.warn("Timed out waiting {} ms for Redis player lock: {}; continuing to load data without the lock", LOCK_WAIT_MILLIS, uuid);
         return true;
     }
 }
